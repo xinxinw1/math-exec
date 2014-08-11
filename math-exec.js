@@ -1,12 +1,15 @@
-/***** Math Executor 3.0 *****/
+/***** Math Executor 3.1.0 *****/
 
-/* require tools 4.0 */
-/* require prec-math 4.0 */
-/* require cmpl-math 1.0 */
-/* require math-check 2.0 */
+/* require tools 4.1.5 */
+/* require prec-math 4.3.0 */
+/* require cmpl-math 1.2.1 */
+/* require math-parse 1.2.0 */
+/* require math-check 2.2.0 */
 
-(function (win, udf){
+(function (udf){
   ////// Import //////
+  
+  var nodep = $.nodep;
   
   var arrp = $.arrp;
   
@@ -19,6 +22,8 @@
   var sli = $.sli;
   var app = $.app;
   
+  var stf = $.stf;
+  
   var att = $.att;
   
   var oref = $.oref;
@@ -28,12 +33,10 @@
   
   var err = $.err;
   
-  var varp = PMath.varp;
+  var varp = Parser.varp;
+  var prs = Parser.prs;
   
-  var log = PMath.log;
-  var proc = PMath.proc;
-  
-  var prs = PMath.prs;
+  var proc = Checker.proc;
   
   var dsp = C.dsp;
   
@@ -81,6 +84,7 @@
   // evaluates lisp array into a number
   function evl(a){
     if (arrp(a)){
+      if (!varp(a[0]))return a;
       if (!fsetp(a[0]))err(evl, "Fn $1 not found", a[0]);
       var r = apl(fref(a[0]), map(evl, sli(a, 1)));
       log("Finish evl", "$1 -> $2", a, r);
@@ -160,12 +164,13 @@
   chkfn("div", C.div);
   
   chkfn("rnd", C.rnd);
-  chkfn("round", C.rnd);
   chkfn("cei", C.cei);
-  chkfn("ceil", C.cei);
   chkfn("flr", C.flr);
-  chkfn("floor", C.flr);
   chkfn("trn", C.trn);
+  
+  chkfn("round", C.rnd);
+  chkfn("ceil", C.cei);
+  chkfn("floor", C.flr);
   chkfn("trunc", C.trn);
   
   chkfn("exp", C.exp);
@@ -199,16 +204,43 @@
   chkfn("ln5", C.ln5);
   chkfn("ln10", C.ln10);
   
+  ////// Logging //////
+  
+  var loggers = [];
+  
+  function log(subj){
+    var rst = sli(arguments, 1);
+    each(loggers, function (f){
+      f(subj, apl(stf, rst));
+    });
+  }
+  
+  function logfn(f){
+    psh(f, loggers);
+  }
+  
+  function rlogfn(f){
+    mrem(f, loggers);
+  }
+  
+  Parser.logfn(log);
+  
   ////// Object exposure //////
   
-  win.PMath = att({
+  var Exec = {
     vars: vars,
     evl: evl,
-    calc: calc
-  }, PMath);
+    calc: calc,
+    
+    logfn: logfn,
+    rlogfn: rlogfn
+  };
+  
+  if (nodep)module.exports = Exec;
+  else window.Exec = Exec;
   
   ////// Testing //////
   
   
   
-})(window);
+})();
