@@ -1,7 +1,0 @@
-Complex Number Calculation Library 0.8 - Aug 13, 2013 15:59
-
-- rename next -> curr in all functions
-- rewrote getOperand to be nonrecursive and to not require the operator to be passed in
-- rename getNextObject -> getObject
-- split function parsing section in parsePrepared to new function parseFunction
-- added descriptive comments at the start of every major function

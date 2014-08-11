@@ -1,7 +1,0 @@
-Math Executor 3.0 - Jul 15, 2014 14:55
-
-- split executing functions from complex-math
-- renames include
-    evalLisp -> evl
-    processVariables -> vars
-    addCheckedFunc -> chkfn
