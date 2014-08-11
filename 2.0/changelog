@@ -1,0 +1,6 @@
+Complex Number Calculation Library 2.0 - Sep 4, 2013 12:23
+
+- added comma "progn" operator as a processVariables "macro"
+- evalLisp now converts ‘a,b’ to a complex number array
+- added addVar, addFunc, and addCheckedFunc functions
+- requires prec-math-check.js

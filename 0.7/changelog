@@ -1,0 +1,7 @@
+Complex Number Calculation Library 0.7 - Aug 13, 2013 14:31
+
+- rename preparse -> prepare, parse -> parsePrepared
+- parse now runs parsePrepared(prepare(expr))
+- new funciton numToDisp: converts ‘a,b’ -> a+bi
+- calc now takes math expression all the way to a+bi
+
