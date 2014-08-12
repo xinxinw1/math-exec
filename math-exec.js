@@ -22,9 +22,13 @@
   var sli = $.sli;
   var app = $.app;
   
-  var stf = $.stf;
+  var each = $.each;
+  var mrem = $.mrem;
+  var psh = $.psh;
   
   var att = $.att;
+  
+  var stf = $.stf;
   
   var oref = $.oref;
   var oset = $.oset;
