@@ -35,14 +35,15 @@ See http://xinxinw1.github.io/math-exec/ for a demo.
 3. Go to https://github.com/xinxinw1/cmpl-math/releases and download the latest release.
 4. Go to https://github.com/xinxinw1/math-check/releases and download the latest release.
 5. Go to https://github.com/xinxinw1/math-parse/releases and download the latest release.
-6. Extract `tools.js`, `prec-math.js`, `cmpl-math.js`, `math-check.js`, and `math-parse.js` into your project directory.
-7. Run `$ = require("./tools.js")` in node.
-8. Run `R = require("./prec-math.js")` in node.
-9. Run `C = require("./cmpl-math.js")` in node.
-10. Run `Checker = require("./math-check.js")` in node.
-11. Run `Parser = require("./math-parse.js")` in node.
-12. Run `PMath = require("./math-exec.js")` in node.
-13. Run `$.prn(PMath.calc("-(53*3-2/(4i))+((34+53i)/(23-34i))*(-i)"))` to make sure it works.  
+6. Go to https://github.com/xinxinw1/math-exec/releases and download the latest release.
+7. Extract `tools.js`, `prec-math.js`, `cmpl-math.js`, `math-check.js`, `math-parse.js`, and `math-exec.js` into your project directory.
+8. Run `$ = require("./tools.js")` in node.
+9. Run `R = require("./prec-math.js")` in node.
+10. Run `C = require("./cmpl-math.js")` in node.
+11. Run `Checker = require("./math-check.js")` in node.
+12. Run `Parser = require("./math-parse.js")` in node.
+13. Run `PMath = require("./math-exec.js")` in node.
+14. Run `$.prn(PMath.calc("-(53*3-2/(4i))+((34+53i)/(23-34i))*(-i)"))` to make sure it works.  
     (Should output `-157.5905044510385757+0.1053412462908012i` and return `undefined`)
 
 ## Function reference
