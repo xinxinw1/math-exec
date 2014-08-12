@@ -228,10 +228,13 @@
   }
   
   Parser.logfn(log);
+  $.sefn(function (e){
+    log("Error", e.s + ": " + e.a);
+  });
   
   ////// Object exposure //////
   
-  var Exec = {
+  var PMath = {
     vars: vars,
     evl: evl,
     calc: calc,
@@ -240,8 +243,8 @@
     rlogfn: rlogfn
   };
   
-  if (nodep)module.exports = Exec;
-  else window.Exec = Exec;
+  if (nodep)module.exports = PMath;
+  else window.PMath = PMath;
   
   ////// Testing //////
   
