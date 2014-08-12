@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Math Executor Test Page</title>
+  <meta charset="UTF-8">
+  <script src="lib/tools.js"></script>
+  <script src="lib/prec-math.js"></script>
+  <script src="lib/cmpl-math.js"></script>
+  <script src="lib/math-parse.js"></script>
+  <script src="lib/math-check.js"></script>
+  <script src="lib/math-exec.js"></script>
+</head>
+
+<body>
+  <script>
+  $.al("-(53*3-2/(4i))+((34+53i)/(23-34i))*(-i) = $1", Exec.calc("-(53*3-2/(4i))+((34+53i)/(23-34i))*(-i)"));
+  $.al("pi(1000) = $1", Exec.calc("pi(1000)"));
+  </script>
+</body>
+
+</html>
