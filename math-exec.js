@@ -65,6 +65,9 @@
         if (has(/^(i|pi|e|phi)$/, nm)){
           err(vars, "set: Can't set special var $1", nm);
         }
+        if (nm === "prec" && !arrp(a[2]) || fnmp(a[2][0]) || !C.intp(a[2])){
+          err(vars, "set: prec = $1 must be an integer", a[2]);
+        }
         var data = vset(nm, vars(a[2]));
         log("Set Variable " + nm, "$1", data);
         return data;
@@ -95,6 +98,14 @@
     return a;
   }
   
+  var prec = 16;
+  
+  function getprec(){
+    var prec = C.realint(vref("prec"));
+    log("Finish getprec", "$1", prec);
+    return prec;
+  }
+  
   function needprec(a){
     var f = fref(a[0]).orig;
     if (inp(f, C.rnd, C.cei, C.flr, C.trn))return false;
@@ -121,7 +132,7 @@
       if (!fsetp(a[0]))err(setprec, "Fn $1 not found", a[0]);
       var r = app([a[0]], map(setprec2, sli(a, 1)));
       //if (needprec(r))r = ["rnd", addprec(r, 100), 16];
-      if (needprec(r))r = addprec(r, 16);
+      if (needprec(r))r = addprec(r, prec);
       log("Finish setprec", "$1 -> $2", a, r);
       return r;
     }
@@ -146,7 +157,7 @@
       if (a[0] === "nrnd")return nsetprec2(a[1]);
       if (!fsetp(a[0]))err(setprec2, "Fn $1 not found", a[0]);
       var r = app([a[0]], map(setprec2, sli(a, 1)));
-      if (needprec(r))r = addprec(r, 100);
+      if (needprec(r))r = addprec(r, prec+100-16);
       log("Finish setprec2", "$1 -> $2", a, r);
       return r;
     }
@@ -171,6 +182,7 @@
   function calc(a){
     log("Input", "$1", a);
     a = prs(a);
+    prec = getprec();
     a = vars(a);
     log("Finish vars", "$1", a);
     a = setprec(a);
@@ -222,6 +234,8 @@
   function chkfn(name, fnref){
     fset(name, proc(fnref));
   }
+  
+  vset("prec", ["16", "0"]);
   
   vset("e", ["e"]);
   vset("pi", ["pi"]);
