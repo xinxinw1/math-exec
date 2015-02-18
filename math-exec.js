@@ -13,14 +13,19 @@
   
   var arrp = $.arrp;
   
+  var inp = $.inp;
+  
   var las = $.las;
   
   var apl = $.apl;
   var map = $.map;
   var has = $.has;
+  var pos = $.pos;
   
   var sli = $.sli;
   var app = $.app;
+  
+  var cpy = $.cpy;
   
   var each = $.each;
   var mrem = $.mrem;
@@ -41,10 +46,15 @@
   var prs = Parser.prs;
   
   var proc = Checker.proc;
+  var pmref = Checker.fref;
   
   var dsp = C.dsp;
   
   ////// Evaluator //////
+  
+  function fnmp(a){
+    return varp(a);
+  }
   
   function vars(a){
     if (arrp(a)){
@@ -85,10 +95,68 @@
     return a;
   }
   
+  function needprec(a){
+    var f = fref(a[0]).orig;
+    if (inp(f, C.rnd, C.cei, C.flr, C.trn))return false;
+    var pm = pmref(f);
+    var n = pos("nprec", pm);
+    if (n === -1)return false;
+    return a[1+n] === undefined;
+  }
+  
+  function addprec(a, p){
+    var pm = pmref(fref(a[0]).orig);
+    var n = pos("nprec", pm);
+    if (n === -1)err(addprec, "No nprec arg in a = $1", a);
+    var r = cpy(a);
+    r[1+n] = p;
+    return r;
+  }
+  
+  // round outer function to 16, inside to 100
+  function setprec(a){
+    if (arrp(a)){
+      if (!fnmp(a[0]))return a;
+      if (a[0] === "nrnd")return nsetprec2(a[1]);
+      if (!fsetp(a[0]))err(setprec, "Fn $1 not found", a[0]);
+      var r = app([a[0]], map(setprec2, sli(a, 1)));
+      //if (needprec(r))r = ["rnd", addprec(r, 100), 16];
+      if (needprec(r))r = addprec(r, 16);
+      log("Finish setprec", "$1 -> $2", a, r);
+      return r;
+    }
+    return a;
+  }
+  
+  // "pass over" the current function but round the ones inside
+  function nsetprec2(a){
+    if (arrp(a)){
+      if (!fnmp(a[0]))return a;
+      if (!fsetp(a[0]))err(nsetprec2, "Fn $1 not found", a[0]);
+      var r = app([a[0]], map(setprec2, sli(a, 1)));
+      log("Finish nsetprec2", "$1 -> $2", a, r);
+      return r;
+    }
+    return a;
+  }
+  
+  function setprec2(a){
+    if (arrp(a)){
+      if (!fnmp(a[0]))return a;
+      if (a[0] === "nrnd")return nsetprec2(a[1]);
+      if (!fsetp(a[0]))err(setprec2, "Fn $1 not found", a[0]);
+      var r = app([a[0]], map(setprec2, sli(a, 1)));
+      if (needprec(r))r = addprec(r, 100);
+      log("Finish setprec2", "$1 -> $2", a, r);
+      return r;
+    }
+    return a;
+  }
+  
   // evaluates lisp array into a number
   function evl(a){
     if (arrp(a)){
-      if (!varp(a[0]))return a;
+      if (!fnmp(a[0]))return a;
       if (!fsetp(a[0]))err(evl, "Fn $1 not found", a[0]);
       var r = apl(fref(a[0]), map(evl, sli(a, 1)));
       log("Finish evl", "$1 -> $2", a, r);
@@ -105,6 +173,8 @@
     a = prs(a);
     a = vars(a);
     log("Finish vars", "$1", a);
+    a = setprec(a);
+    log("Finish setprec", "$1", a);
     a = evl(a);
     log("Finish evl", "$1", a);
     a = dsp(a);
