@@ -1,4 +1,4 @@
-/***** Math Executor 3.1.0 *****/
+/***** Math Executor 3.1.1 *****/
 
 /* require tools 4.1.5 */
 /* require prec-math 4.3.0 */
