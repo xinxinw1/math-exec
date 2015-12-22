@@ -1,4 +1,4 @@
-/***** Math Executor 4.0.0 *****/
+/***** Math Executor 4.0.1 *****/
 
 /* require tools 4.12.0 */
 /* require prec-math 5.0.0 */
@@ -175,6 +175,16 @@
   chkfn("floor", C.flr);
   chkfn("trunc", C.trn);
   
+  chkfn("abs", C.abs);
+  chkfn("arg", C.arg);
+  chkfn("sgn", C.sgn);
+  chkfn("sign", C.sgn);
+  chkfn("re", C.re);
+  chkfn("Re", C.re);
+  chkfn("im", C.im);
+  chkfn("Im", C.im);
+  chkfn("conj", C.conj);
+  
   chkfn("exp", C.exp);
   chkfn("ln", C.ln);
   chkfn("pow", C.pow);
@@ -189,15 +199,7 @@
   chkfn("sinh", C.sinh);
   chkfn("cosh", C.cosh);
   
-  chkfn("abs", C.abs);
-  chkfn("arg", C.arg);
-  chkfn("sgn", C.sgn);
-  chkfn("sign", C.sgn);
-  chkfn("re", C.re);
-  chkfn("Re", C.re);
-  chkfn("im", C.im);
-  chkfn("Im", C.im);
-  chkfn("conj", C.conj);
+  chkfn("atan2", C.atan2);
   
   chkfn("pi", C.pi);
   chkfn("e", C.e);
