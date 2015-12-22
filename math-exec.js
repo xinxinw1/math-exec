@@ -1,10 +1,10 @@
-/***** Math Executor 3.1.1 *****/
+/***** Math Executor 4.0.0 *****/
 
-/* require tools 4.1.5 */
-/* require prec-math 4.3.0 */
-/* require cmpl-math 1.2.1 */
-/* require math-parse 1.2.0 */
-/* require math-check 2.2.0 */
+/* require tools 4.12.0 */
+/* require prec-math 5.0.0 */
+/* require cmpl-math 2.0.0 */
+/* require math-check 3.0.0 */
+/* require math-parse 2.0.0 */
 
 (function (udf){
   ////// Import //////
@@ -24,7 +24,7 @@
   
   var each = $.each;
   var mrem = $.mrem;
-  var psh = $.psh;
+  var push = $.push;
   
   var att = $.att;
   
@@ -42,7 +42,7 @@
   
   var proc = Checker.proc;
   
-  var dsp = C.dsp;
+  var dsp = C.tostr;
   
   ////// Evaluator //////
   
@@ -160,8 +160,6 @@
   vset("ln5", ["ln5"]);
   vset("ln10", ["ln10"]);
   
-  fset("num", C.num);
-  
   chkfn("add", C.add);
   chkfn("sub", C.sub);
   chkfn("mul", C.mul);
@@ -220,7 +218,7 @@
   }
   
   function logfn(f){
-    psh(f, loggers);
+    push(f, loggers);
   }
   
   function rlogfn(f){
