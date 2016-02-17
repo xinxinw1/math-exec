@@ -164,6 +164,21 @@
     }
   }
   
+  function def(a, x, env){
+    if (udfp(env))env = car(envs);
+    return put(a, x, env);
+  }
+  
+  function undef(a, x, env){
+    if (udfp(env))env = car(envs);
+    if (!udfp(env[a])){
+      var x = env[a];
+      delete env[a];
+      return x;
+    }
+    return nil();
+  }
+  
   function setp(a, env){
     if (udfp(env))env = car(envs);
     while (true){
@@ -210,11 +225,11 @@
     if (arrp(name)){
       var fname = name[0];
       var prms = sli(name, 1);
-      return func(fname, function (){
+      return def(fname, fn(function (){
         return evl(value, parenv(prms, arguments, {0: env}));
-      });
+      }), env);
     }
-    return set(name, evl(value));
+    return def(name, evl(value, env), env);
   });
   
   spec("unset", function (env, name){
