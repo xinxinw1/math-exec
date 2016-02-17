@@ -1,17 +1,20 @@
-/***** Math Executor 4.0.1 *****/
+/***** Math Executor *****/
 
-/* require tools 4.12.0 */
-/* require prec-math 5.0.0 */
-/* require cmpl-math 2.0.0 */
-/* require math-check 3.0.0 */
-/* require math-parse 2.0.0 */
+/* require tools */
+/* require prec-math */
+/* require cmpl-math */
+/* require math-check */
+/* require math-parse */
 
 (function (udf){
   ////// Import //////
   
   var nodep = $.nodep;
   
+  var udfp = $.udfp;
   var arrp = $.arrp;
+  
+  var al = $.al;
   
   var las = $.las;
   
@@ -35,6 +38,17 @@
   var osetp = $.osetp;
   var odel = $.odel;
   
+  var head = $.head;
+  
+  var typ = L.typ;
+  var dat = L.dat;
+  var mkdat = L.mkdat;
+  var isa = L.isa;
+  
+  var sta = L.sta;
+  var car = L.car;
+  var lis = L.lis;
+  
   var err = $.err;
   
   var varp = Parser.varp;
@@ -42,57 +56,55 @@
   
   var proc = Checker.proc;
   
-  var dsp = C.tostr;
+  function dsp(a){
+    var t = typ(a);
+    switch (t){
+      case "cmpl": return C.tostr(a);
+      case "fn": return "<fn>";
+      case "spec": return "<spec>";
+      case "nil": return "<nil>";
+    }
+    err(dsp, "Unknown type $1", t);
+  }
   
   ////// Evaluator //////
   
-  function vars(a){
+  // evaluates lisp array into a number
+  function evl(a, env){
+    if (udfp(env))env = car(envs);
     if (arrp(a)){
-      var f = a[0];
-      if (f == "set"){
-        var nm = a[1];
-        if (!varp(nm))err(vars, "set: Invalid variable name $1", nm);
-        if (has(/^(i|pi|e|phi)$/, nm)){
-          err(vars, "set: Can't set special var $1", nm);
+      if (setp(a[0], env)){
+        var f = ref(a[0], env);
+        switch (typ(f)){
+        case "spec":
+          log("Start evl spec", "$1", a);
+          var r = apl(dat(f), head(env, sli(a, 1)));
+          log("Finish evl spec", "$1 -> $2", a, r);
+          return r;
+        case "fn":
+          log("Start evl fn", "$1", a);
+          var r = apl(dat(f), evlarr(sli(a, 1), env));
+          log("Finish evl fn", "$1 -> $2", a, r);
+          return r;
+        default:
+          err(evl, "Unknown type $1", typ(f));
         }
-        var data = vset(nm, vars(a[2]));
-        log("Set Variable " + nm, "$1", data);
-        return data;
       }
-      if (f == "unset"){
-        var nm = a[1];
-        if (has(/^(i|pi|e|phi)$/, nm)){
-          err(vars, "unset: Can't unset special var $1", nm);
-        }
-        var data = vdel(nm);
-        if (!data)err(vars, "unset: Variable $1 is already unset", nm);
-        log("Unset Variable " + nm, "$1", data);
-        return data;
-      }
-      if (f == "progn"){
-        var args = map(vars, sli(a, 1));
-        log("Finish progn", "$1", a);
-        return las(args);
-      }
-      return app([f], map(vars, sli(a, 1)));
+      err(evl, "Unknown function $1", a[0]);
     }
     if (varp(a)){
-      if (!vsetp(a))err(vars, "Variable $1 is undefined", a);
-      var data = vref(a);
-      log("Get Variable " + a, "$1", data);
-      return data;
-    }
-    return a;
-  }
-  
-  // evaluates lisp array into a number
-  function evl(a){
-    if (arrp(a)){
-      if (!varp(a[0]))return a;
-      if (!fsetp(a[0]))err(evl, "Fn $1 not found", a[0]);
-      var r = apl(fref(a[0]), map(evl, sli(a, 1)));
-      log("Finish evl", "$1 -> $2", a, r);
-      return r;
+      if (setp(a, env)){
+        var x = ref(a, env);
+        if (isa("smac", x)){
+          log("Start eval smac", "$1", a);
+          var n = apl(dat(x), [env]);
+          log("Smac transform", "$1 -> $2", a, n);
+          return evl(n, env);
+        }
+        log("Found variable", "$1 -> $2", a, x);
+        return x;
+      }
+      err(evl, "Unknown variable $1", a);
     }
     return a;
   }
@@ -103,8 +115,6 @@
   function calc(a){
     log("Input", "$1", a);
     a = prs(a);
-    a = vars(a);
-    log("Finish vars", "$1", a);
     a = evl(a);
     log("Finish evl", "$1", a);
     a = dsp(a);
@@ -115,50 +125,125 @@
   
   ////// Variables //////
   
-  var vs = {};
+  var glbs = {};
   
-  function vref(name){
-    return oref(vs, name);
+  var envs = lis(glbs);
+  function ref(a, env){
+    if (udfp(env))env = car(envs);
+    while (true){
+      if (udfp(env))err(ref, "Unknown variable a = $1", a);
+      if (!udfp(env[a]))return env[a];
+      env = env[0];
+    }
   }
   
-  function vset(name, data){
-    return oset(vs, name, data);
+  function put(a, x, env){
+    return env[a] = x;
   }
   
-  function vsetp(name){
-    return osetp(vs, name);
+  function set(a, x, env){
+    if (udfp(env))env = car(envs);
+    var topenv = env;
+    while (true){
+      if (udfp(env))return put(a, x, topenv);
+      if (!udfp(env[a]))return put(a, x, env);
+      env = env[0];
+    }
   }
   
-  function vdel(name){
-    return odel(vs, name);
+  function unset(a, env){
+    if (udfp(env))env = car(envs);
+    while (true){
+      if (udfp(env))return nil();
+      if (!udfp(env[a])){
+        var x = env[a];
+        delete env[a];
+        return x;
+      }
+      env = env[0];
+    }
   }
   
-  var funcs = {};
-  
-  // gets function reference from functions list given name as string
-  
-  function fref(name){
-    return oref(funcs, name);
+  function setp(a, env){
+    if (udfp(env))env = car(envs);
+    while (true){
+      if (udfp(env))return false;
+      if (!udfp(env[a]))return true;
+      env = env[0];
+    }
   }
   
-  function fset(name, fnref){
-    return oset(funcs, name, fnref);
+  function fn(f){
+    return mkdat("fn", f);
   }
   
-  function fsetp(name){
-    return osetp(funcs, name);
+  function sp(f){
+    return mkdat("spec", f);
   }
   
-  function chkfn(name, fnref){
-    fset(name, proc(fnref));
+  function sm(f){
+    return mkdat("smac", f);
   }
   
-  vset("e", ["e"]);
-  vset("pi", ["pi"]);
-  vset("phi", ["phi"]);
-  vset("ln2", ["ln2"]);
-  vset("ln5", ["ln5"]);
-  vset("ln10", ["ln10"]);
+  function nil(){
+    return {type: "nil"};
+  }
+  
+  
+  function spec(nm, f){
+    return set(nm, sp(f));
+  }
+  
+  function func(nm, f){
+    return set(nm, fn(f));
+  }
+  
+  function smac(nm, f){
+    return set(nm, sm(f));
+  }
+  
+  function chkfn(nm, f){
+    return func(nm, proc(f));
+  }
+  
+  spec("set", function (env, name, value){
+    if (arrp(name)){
+      var fname = name[0];
+      var prms = sli(name, 1);
+      return func(fname, function (){
+        return evl(value, parenv(prms, arguments, {0: env}));
+      });
+    }
+    return set(name, evl(value));
+  });
+  
+  spec("unset", function (env, name){
+    return unset(name, env);
+  });
+  
+  smac("e", function (env){
+    return prs("eFn()");
+  });
+      
+  function evlarr(a, env){
+    return map(function (a){
+      return evl(a, env);
+    }, a);
+  }
+  
+  // a = ["x", "y"], b = [<cmpl 1>, <cmpl 2>]
+  function parenv(a, b, env){
+    for (var i = 0; i < a.length; i++){
+      put(a[i], b[i], env);
+    }
+    return env;
+  }
+  
+  
+  func("progn", function (){
+    return $.las_(arguments);
+  });
+  
   
   chkfn("add", C.add);
   chkfn("sub", C.sub);
@@ -201,12 +286,21 @@
   
   chkfn("atan2", C.atan2);
   
-  chkfn("pi", C.pi);
-  chkfn("e", C.e);
-  chkfn("phi", C.phi);
-  chkfn("ln2", C.ln2);
-  chkfn("ln5", C.ln5);
-  chkfn("ln10", C.ln10);
+  chkfn("piFn", C.pi);
+  chkfn("eFn", C.e);
+  chkfn("phiFn", C.phi);
+  chkfn("ln2Fn", C.ln2);
+  chkfn("ln5Fn", C.ln5);
+  
+  
+  /*vset("e", ["e"]);
+  vset("pi", ["pi"]);
+  vset("phi", ["phi"]);
+  vset("ln2", ["ln2"]);
+  vset("ln5", ["ln5"]);
+  vset("ln10", ["ln10"]);
+  */
+  
   
   ////// Logging //////
   
@@ -229,13 +323,12 @@
   
   Parser.logfn(log);
   $.sefn(function (e){
-    log("Error", e.s + ": " + e.a);
+    log("Error", e.sig + ": " + e.text);
   });
   
   ////// Object exposure //////
   
   var PMath = {
-    vars: vars,
     evl: evl,
     calc: calc,
     
