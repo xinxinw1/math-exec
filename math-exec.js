@@ -25,6 +25,8 @@
   var sli = $.sli;
   var app = $.app;
   
+  var setDspFn = $.setDspFn;
+  
   var each = $.each;
   var mrem = $.mrem;
   var push = $.push;
@@ -39,15 +41,17 @@
   var odel = $.odel;
   
   var head = $.head;
+  var arrd = $.arrd;
   
-  var typ = L.typ;
-  var dat = L.dat;
-  var mkdat = L.mkdat;
-  var isa = L.isa;
+  var typ = $.typ;
+  var dat = $.dat;
+  var mkdat = $.mkdat;
+  var isa = $.isa;
   
-  var sta = L.sta;
-  var car = L.car;
-  var lis = L.lis;
+  var sta = $.sta;
+  var car = $.car;
+  var lis = $.lis;
+  var nil = $.nil;
   
   var err = $.err;
   
@@ -56,21 +60,10 @@
   
   var proc = Checker.proc;
   
-  function dsp(a){
-    var t = typ(a);
-    switch (t){
-      case "cmpl": return C.tostr(a);
-      case "fn": return "<fn>";
-      case "spec": return "<spec>";
-      case "nil": return "<nil>";
-    }
-    err(dsp, "Unknown type $1", t);
-  }
-  
   ////// Evaluator //////
   
   // evaluates lisp array into a number
-  function evl(a, env){
+  function evl(a, log, env){
     if (udfp(env))env = car(envs);
     if (arrp(a)){
       if (setp(a[0], env)){
@@ -78,12 +71,12 @@
         switch (typ(f)){
         case "spec":
           log("Start evl spec", "$1", a);
-          var r = apl(dat(f), head(env, sli(a, 1)));
+          var r = apl(dat(f), arrd(log, env, sli(a, 1)));
           log("Finish evl spec", "$1 -> $2", a, r);
           return r;
         case "fn":
           log("Start evl fn", "$1", a);
-          var r = apl(dat(f), evlarr(sli(a, 1), env));
+          var r = apl(dat(f), evlarr(sli(a, 1), log, env));
           log("Finish evl fn", "$1 -> $2", a, r);
           return r;
         default:
@@ -99,7 +92,7 @@
           log("Start eval smac", "$1", a);
           var n = apl(dat(x), [env]);
           log("Smac transform", "$1 -> $2", a, n);
-          return evl(n, env);
+          return evl(n, log, env);
         }
         log("Found variable", "$1 -> $2", a, x);
         return x;
@@ -109,19 +102,71 @@
     return a;
   }
   
+  function evlarr(a, log, env){
+    return map(function (a){
+      return evl(a, log, env);
+    }, a);
+  }
+  
+  // a = ["x", "y"], b = [<cmpl 1>, <cmpl 2>]
+  function parenv(a, b, env){
+    for (var i = 0; i < a.length; i++){
+      put(a[i], b[i], env);
+    }
+    return env;
+  }
+  
   ////// Calculator //////
   
   // converts math expr -> a+bi
-  function calc(a){
+  function calc(a, log){
+    if (udfp(log))log = function (){};
     log("Input", "$1", a);
-    a = prs(a);
-    a = evl(a);
+    a = prs(a, log);
+    a = evl(a, log);
     log("Finish evl", "$1", a);
     a = dsp(a);
     log("Finish dsp", "$1", a);
     
     return a;
   }
+  
+  ////// Types //////
+  
+  function dsp(a){
+    var t = typ(a);
+    switch (t){
+      case "cmpl": return C.tostr(a);
+      case "fn": return "<fn>";
+      case "spec": return "<spec>";
+      case "nil": return "<nil>";
+    }
+    err(dsp, "Unknown type $1", t);
+  }
+  
+  function fn(f){
+    return mkdat("fn", f);
+  }
+  
+  function sp(f){
+    return mkdat("spec", f);
+  }
+  
+  function sm(f){
+    return mkdat("smac", f);
+  }
+  
+  setDspFn("fn", function (){
+    return "<fn>";
+  });
+  
+  setDspFn('spec', function (){
+    return "<spec>";
+  });
+  
+  setDspFn('nil', function (){
+    return "<nil>";
+  });
   
   ////// Variables //////
   
@@ -188,23 +233,6 @@
     }
   }
   
-  function fn(f){
-    return mkdat("fn", f);
-  }
-  
-  function sp(f){
-    return mkdat("spec", f);
-  }
-  
-  function sm(f){
-    return mkdat("smac", f);
-  }
-  
-  function nil(){
-    return {type: "nil"};
-  }
-  
-  
   function spec(nm, f){
     return set(nm, sp(f));
   }
@@ -221,15 +249,15 @@
     return func(nm, proc(f));
   }
   
-  spec("set", function (env, name, value){
+  spec("set", function (log, env, name, value){
     if (arrp(name)){
       var fname = name[0];
       var prms = sli(name, 1);
       return def(fname, fn(function (){
-        return evl(value, parenv(prms, arguments, {0: env}));
+        return evl(value, log, parenv(prms, arguments, {0: env}));
       }), env);
     }
-    return def(name, evl(value, env), env);
+    return def(name, evl(value, log, env), env);
   });
   
   spec("unset", function (env, name){
@@ -240,21 +268,6 @@
     return prs("eFn()");
   });
       
-  function evlarr(a, env){
-    return map(function (a){
-      return evl(a, env);
-    }, a);
-  }
-  
-  // a = ["x", "y"], b = [<cmpl 1>, <cmpl 2>]
-  function parenv(a, b, env){
-    for (var i = 0; i < a.length; i++){
-      put(a[i], b[i], env);
-    }
-    return env;
-  }
-  
-  
   func("progn", function (){
     return $.las_(arguments);
   });
@@ -316,39 +329,11 @@
   vset("ln10", ["ln10"]);
   */
   
-  
-  ////// Logging //////
-  
-  var loggers = [];
-  
-  function log(subj){
-    var rst = sli(arguments, 1);
-    each(loggers, function (f){
-      f(subj, apl(stf, rst));
-    });
-  }
-  
-  function logfn(f){
-    push(f, loggers);
-  }
-  
-  function rlogfn(f){
-    mrem(f, loggers);
-  }
-  
-  Parser.logfn(log);
-  $.sefn(function (e){
-    log("Error", e.sig + ": " + e.text);
-  });
-  
   ////// Object exposure //////
   
   var PMath = {
     evl: evl,
-    calc: calc,
-    
-    logfn: logfn,
-    rlogfn: rlogfn
+    calc: calc
   };
   
   if (nodep)module.exports = PMath;
