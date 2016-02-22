@@ -264,8 +264,16 @@
     return unset(name, env);
   });
   
+  smac("pi", function (env){
+    return prs("piFn()");
+  });
+  
   smac("e", function (env){
     return prs("eFn()");
+  });
+  
+  smac("phi", function (env){
+    return prs("phiFn()");
   });
       
   func("progn", function (){
@@ -317,17 +325,6 @@
   chkfn("piFn", C.pi);
   chkfn("eFn", C.e);
   chkfn("phiFn", C.phi);
-  chkfn("ln2Fn", C.ln2);
-  chkfn("ln5Fn", C.ln5);
-  
-  
-  /*vset("e", ["e"]);
-  vset("pi", ["pi"]);
-  vset("phi", ["phi"]);
-  vset("ln2", ["ln2"]);
-  vset("ln5", ["ln5"]);
-  vset("ln10", ["ln10"]);
-  */
   
   ////// Object exposure //////
   
