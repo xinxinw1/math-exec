@@ -260,7 +260,7 @@
     return def(name, evl(value, log, env), env);
   });
   
-  spec("unset", function (env, name){
+  spec("unset", function (log, env, name){
     return unset(name, env);
   });
   

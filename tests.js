@@ -32,4 +32,12 @@ QUnit.test('Executor', function (assert){
   assert.throws(function (){
     PMath.calc("g(x)=(r=3, x*r), g(2), r");
   }, "16");
+  
+  assert.same(PMath.calc("x=5, unset(x)"), "5");
+  assert.throws(function (){
+    PMath.calc("what=5, unset(what), what");
+  });
+  assert.throws(function (){
+    PMath.calc("notexists");
+  });
 });
