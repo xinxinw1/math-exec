@@ -314,7 +314,10 @@
   chkfn("cbrt", C.cbrt);
   chkfn("fact", C.fact);
   chkfn("bin", C.bin);
+  chkfn("quo", C.quo);
+  chkfn("rem", C.mod);
   chkfn("mod", C.mod);
+  chkfn("gcd", C.gcd);
   chkfn("agm", C.agm);
   chkfn("sin", C.sin);
   chkfn("cos", C.cos);
