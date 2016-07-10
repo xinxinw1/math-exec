@@ -319,6 +319,7 @@
   chkfn("mod", C.mod);
   chkfn("gcd", C.gcd);
   chkfn("agm", C.agm);
+  chkfn("rand", C.rand);
   chkfn("sin", C.sin);
   chkfn("cos", C.cos);
   chkfn("sinh", C.sinh);
