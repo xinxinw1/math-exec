@@ -317,6 +317,7 @@
   chkfn("quo", C.quo);
   chkfn("rem", C.mod);
   chkfn("mod", C.mod);
+  chkfn("modPow", C.modPow);
   chkfn("gcd", C.gcd);
   chkfn("agm", C.agm);
   chkfn("rand", C.rand);
