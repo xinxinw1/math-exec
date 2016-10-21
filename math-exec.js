@@ -55,6 +55,9 @@
   
   var err = $.err;
   
+  var cmplp = C.cmplp;
+  var zerop = C.zerop;
+  
   var varp = Parser.varp;
   var prs = Parser.prs;
   
@@ -245,6 +248,12 @@
   function chkfn(nm, f){
     return func(nm, proc(f));
   }
+  
+  spec("if", function (log, env, cond, yes, no){
+    var test = evl(cond, log, env);
+    if (cmplp(test) && zerop(test))return evl(yes, log, env);
+    return evl(no, log, env);
+  });
   
   spec("set", function (log, env, name, value){
     if (arrp(name)){
