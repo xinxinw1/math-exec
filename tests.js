@@ -40,4 +40,5 @@ QUnit.test('Executor', function (assert){
   assert.throws(function (){
     PMath.calc("notexists");
   });
+  assert.same(PMath.calc("(f(x)=x+2)(5)"), "7");
 });

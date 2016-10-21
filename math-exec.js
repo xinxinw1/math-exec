@@ -66,24 +66,21 @@
   function evl(a, log, env){
     if (udfp(env))env = car(envs);
     if (arrp(a)){
-      if (setp(a[0], env)){
-        var f = ref(a[0], env);
-        switch (typ(f)){
-        case "spec":
-          log("Start evl spec", "$1", a);
-          var r = apl(dat(f), arrd(log, env, sli(a, 1)));
-          log("Finish evl spec", "$1 -> $2", a, r);
-          return r;
-        case "fn":
-          log("Start evl fn", "$1", a);
-          var r = apl(dat(f), evlarr(sli(a, 1), log, env));
-          log("Finish evl fn", "$1 -> $2", a, r);
-          return r;
-        default:
-          err(evl, "Unknown type $1", typ(f));
-        }
+      var f = evl(a[0], log, env);
+      switch (typ(f)){
+      case "spec":
+        log("Start evl spec", "$1", a);
+        var r = apl(dat(f), arrd(log, env, sli(a, 1)));
+        log("Finish evl spec", "$1 -> $2", a, r);
+        return r;
+      case "fn":
+        log("Start evl fn", "$1", a);
+        var r = apl(dat(f), evlarr(sli(a, 1), log, env));
+        log("Finish evl fn", "$1 -> $2", a, r);
+        return r;
+      default:
+        err(evl, "f = $1 is not a function", f);
       }
-      err(evl, "Unknown function $1", a[0]);
     }
     if (varp(a)){
       if (setp(a, env)){
@@ -253,9 +250,10 @@
     if (arrp(name)){
       var fname = name[0];
       var prms = sli(name, 1);
-      return def(fname, fn(function (){
+      var f = fn(function (){
         return evl(value, log, parenv(prms, arguments, {0: env}));
-      }), env);
+      });
+      return (fname === "lambda")?f:def(fname, f, env);
     }
     return def(name, evl(value, log, env), env);
   });
@@ -313,6 +311,7 @@
   chkfn("sqrt", C.sqrt);
   chkfn("cbrt", C.cbrt);
   chkfn("fact", C.fact);
+  chkfn("nCr", C.bin);
   chkfn("bin", C.bin);
   chkfn("quo", C.quo);
   chkfn("rem", C.mod);
