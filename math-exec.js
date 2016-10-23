@@ -67,18 +67,24 @@
   
   // evaluates lisp array into a number
   function evl(a, log, env){
-    if (udfp(env))env = car(envs);
+    if (udfp(env))env = glbs;
     if (arrp(a)){
       var f = evl(a[0], log, env);
       switch (typ(f)){
-      case "spec":
-        log("Start evl spec", "$1", a);
-        var r = apl(dat(f), arrd(log, env, sli(a, 1)));
-        log("Finish evl spec", "$1 -> $2", a, r);
+      case "specref":
+        log("Start evl specref", "$1", a);
+        var r = apl(stdspecs[dat(f)], arrd(log, env, sli(a, 1)));
+        log("Finish evl specref", "$1 -> $2", a, r);
+        return r;
+      case "fnref":
+        log("Start evl fnref", "$1", a);
+        var r = apl(stdfns[dat(f)], evlarr(sli(a, 1), log, env));
+        log("Finish evl fnef", "$1 -> $2", a, r);
         return r;
       case "fn":
         log("Start evl fn", "$1", a);
-        var r = apl(dat(f), evlarr(sli(a, 1), log, env));
+        var args = evlarr(sli(a, 1), log, env);
+        var r = evl(f.code, log, parenv(f.params, args, {0: f.env}));
         log("Finish evl fn", "$1 -> $2", a, r);
         return r;
       default:
@@ -88,9 +94,9 @@
     if (varp(a)){
       if (setp(a, env)){
         var x = ref(a, env);
-        if (isa("smac", x)){
+        if (isa("smacref", x)){
           log("Start eval smac", "$1", a);
-          var n = apl(dat(x), [env]);
+          var n = apl(stdsmacs[dat(x)], [env]);
           log("Smac transform", "$1 -> $2", a, n);
           return evl(n, log, env);
         }
@@ -133,35 +139,42 @@
   
   ////// Types //////
   
+  // have env only store objects with a named link to the actual function
+  //   so that env is serializable
+  
+  function fnref(name){
+    return mkdat("fnref", name);
+  }
+  
+  function specref(name){
+    return mkdat("specref", name);
+  }
+  
+  function smacref(name){
+    return mkdat("smacref", name);
+  }
+  
+  // for user-defined fns
+  function fn(name, params, code, env){
+    return {type: "fn", name: name, params: params, code: code, env: env};
+  }
+  
   function dsp(a){
-    var t = typ(a);
-    switch (t){
-      case "cmpl": return C.tostr(a);
-      case "fn": return "<fn>";
-      case "spec": return "<spec>";
-      case "nil": return "<nil>";
-    }
-    err(dsp, "Unknown type $1", t);
+    if (typ(a) === "cmpl")return C.tostr(a);
+    return $.dsp(a);
   }
   
-  function fn(f){
-    return mkdat("fn", f);
-  }
-  
-  function sp(f){
-    return mkdat("spec", f);
-  }
-  
-  function sm(f){
-    return mkdat("smac", f);
-  }
-  
-  setDspFn("fn", function (){
-    return "<fn>";
+  setDspFn("fnref", function (a){
+    return "<fnref " + dat(a) + ">";
   });
   
-  setDspFn('spec', function (){
-    return "<spec>";
+  setDspFn('specref', function (a){
+    return "<specref " + dat(a) + ">";
+  });
+  
+  setDspFn("fn", function (a){
+    if (udfp(a.name))return "<fn>";
+    return "<fn " + a.name + ">";
   });
   
   setDspFn('nil', function (){
@@ -172,9 +185,7 @@
   
   var glbs = {};
   
-  var envs = lis(glbs);
   function ref(a, env){
-    if (udfp(env))env = car(envs);
     while (true){
       if (udfp(env))err(ref, "Unknown variable a = $1", a);
       if (!udfp(env[a]))return env[a];
@@ -187,7 +198,6 @@
   }
   
   function set(a, x, env){
-    if (udfp(env))env = car(envs);
     var topenv = env;
     while (true){
       if (udfp(env))return put(a, x, topenv);
@@ -197,7 +207,6 @@
   }
   
   function unset(a, env){
-    if (udfp(env))env = car(envs);
     while (true){
       if (udfp(env))return nil();
       if (!udfp(env[a])){
@@ -210,12 +219,10 @@
   }
   
   function def(a, x, env){
-    if (udfp(env))env = car(envs);
     return put(a, x, env);
   }
   
   function undef(a, x, env){
-    if (udfp(env))env = car(envs);
     if (!udfp(env[a])){
       var x = env[a];
       delete env[a];
@@ -225,7 +232,6 @@
   }
   
   function setp(a, env){
-    if (udfp(env))env = car(envs);
     while (true){
       if (udfp(env))return false;
       if (!udfp(env[a]))return true;
@@ -233,16 +239,25 @@
     }
   }
   
+  ////// Reference Procedure Definitions //////
+  
+  var stdfns = {};
+  var stdspecs = {};
+  var stdsmacs = {};
+  
   function spec(nm, f){
-    return set(nm, sp(f));
+    stdspecs[nm] = f;
+    return set(nm, specref(nm), glbs);
   }
   
   function func(nm, f){
-    return set(nm, fn(f));
+    stdfns[nm] = f;
+    return set(nm, fnref(nm), glbs);
   }
   
   function smac(nm, f){
-    return set(nm, sm(f));
+    stdsmacs[nm] = f;
+    return set(nm, smacref(nm), glbs);
   }
   
   function chkfn(nm, f){
@@ -258,13 +273,12 @@
   spec("set", function (log, env, name, value){
     if (arrp(name)){
       var fname = name[0];
+      if (fname === "lambda")fname = undefined;
       var prms = sli(name, 1);
-      var f = fn(function (){
-        return evl(value, log, parenv(prms, arguments, {0: env}));
-      });
-      return (fname === "lambda")?f:def(fname, f, env);
+      var f = fn(fname, prms, value, env);
+      return udfp(fname)?f:set(fname, f, env);
     }
-    return def(name, evl(value, log, env), env);
+    return set(name, evl(value, log, env), env);
   });
   
   spec("unset", function (log, env, name){
@@ -344,7 +358,8 @@
   
   var PMath = {
     evl: evl,
-    calc: calc
+    calc: calc,
+    glbs: glbs
   };
   
   if (nodep)module.exports = PMath;
